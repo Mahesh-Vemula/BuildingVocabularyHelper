@@ -1,15 +1,12 @@
 package com.mv.buildingVocabularyHelper;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,17 +18,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.view.Menu;
-import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
+
 import com.mv.buildingVocabularyHelper.api.DictornaryAPI;
-import com.mv.buildingVocabularyHelper.business.DictonoryAPIManager;
+import com.mv.buildingVocabularyHelper.business.DictonaryAPIManager;
 import com.mv.buildingVocabularyHelper.dto.Collegiate;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import retrofit2.Call;
@@ -47,37 +43,37 @@ public class MainActivity extends AppCompatActivity {
     private TextView displayText;
     private Button button;
     private ArrayAdapter adapter;
+    private NestedScrollView nestedScrollView;
     private List<Collegiate> collegiates;
-    DictonoryAPIManager dictonoryAPIManager;
+    DictonaryAPIManager dictonaryAPIManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        editText = (EditText) findViewById(R.id.editText);
-        listView = (ListView) findViewById(R.id.listView);
-        displayText = (TextView) findViewById(R.id.textView);
-        button = (Button) findViewById(R.id.button);
-        editText.setOnEditorActionListener(new EditText.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if(actionId== EditorInfo.IME_ACTION_DONE){
-                    searchButtonClick(v);
-                }
-                return false;
+        editText = findViewById(R.id.editText);
+        listView = findViewById(R.id.listView);
+        displayText = findViewById(R.id.textView);
+        button = findViewById(R.id.button);
+        nestedScrollView = findViewById(R.id.scrollViewBlock);
+        editText.setOnEditorActionListener((v, actionId, event) -> {
+            if(actionId== EditorInfo.IME_ACTION_DONE){
+                searchButtonClick(v);
             }
+            return false;
         });
         SharedPreferences preferences = getSharedPreferences("AUTHENTICATION_FILE_NAME", Context.MODE_PRIVATE);
-        dictonoryAPIManager = new DictonoryAPIManager();
-        collegiates = dictonoryAPIManager.getCollegiatesFromPreferences(preferences);
+        dictonaryAPIManager = new DictonaryAPIManager();
+        collegiates = dictonaryAPIManager.getCollegiatesFromPreferences(preferences);
+        Collections.reverse(collegiates);
 
         adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_2, android.R.id.text1, collegiates) {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
-                TextView text1 = (TextView) view.findViewById(android.R.id.text1);
-                TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+                TextView text1 = view.findViewById(android.R.id.text1);
+                TextView text2 = view.findViewById(android.R.id.text2);
                 text1.setTypeface(null, Typeface.BOLD);
 
                 text1.setText(collegiates.get(position).getMeta().getId());
@@ -105,13 +101,13 @@ public class MainActivity extends AppCompatActivity {
             editText.setVisibility(View.VISIBLE);
             displayText.setVisibility(View.VISIBLE);
             button.setVisibility(View.VISIBLE);
-            Toast.makeText(this, "You clicked add new", Toast.LENGTH_SHORT).show();
+            nestedScrollView.setVisibility(View.VISIBLE);
         }else if(item.getItemId() == R.id.history){
             listView.setVisibility(View.VISIBLE);
             editText.setVisibility(View.GONE);
             displayText.setVisibility(View.GONE);
             button.setVisibility(View.GONE);
-            Toast.makeText(this, "You clicked history", Toast.LENGTH_SHORT).show();
+            nestedScrollView.setVisibility(View.GONE);
         }else{
             return super.onOptionsItemSelected(item);
         }
@@ -144,23 +140,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Collegiate>> call, Response<List<Collegiate>> response) {
                 Log.v("API call", "testing log");
-                List<Collegiate> collegiatesLocal = response.body();
-                if(collegiatesLocal.size()>0){
-                    String[] definations = collegiatesLocal.get(0).getShortdef();
+                List<Collegiate> collegiatesForNewWord = response.body();
+                if(collegiatesForNewWord.size()>0){
+                    String[] definations = collegiatesForNewWord.get(0).getShortdef();
                     String combinedDefinations = String.join("\n\n", definations);
                     Log.v("API call", combinedDefinations);
                     displayText.setText(combinedDefinations);
 
 
                     SharedPreferences preferences = getSharedPreferences("AUTHENTICATION_FILE_NAME", Context.MODE_PRIVATE);
-                    Boolean added = dictonoryAPIManager.updateHistoryData(preferences, collegiatesLocal.get(0));
+                    Boolean added = dictonaryAPIManager.updateHistoryData(preferences, collegiatesForNewWord.get(0));
                     if(added){
-                        collegiates.add(collegiatesLocal.get(0));
+                        collegiates.add(0,collegiatesForNewWord.get(0));
                         adapter.notifyDataSetChanged();
                     }
                 }
 
-                Log.v("API call", String.valueOf(collegiatesLocal.size()));
+                Log.v("API call", String.valueOf(collegiatesForNewWord.size()));
             }
 
             @Override
@@ -177,21 +173,21 @@ public class MainActivity extends AppCompatActivity {
     class MyAdapter extends BaseAdapter{
 
         private Context context;
-        private List<Collegiate> collegiates;
+        private List<Collegiate> collegiate;
 
         public MyAdapter(Context context, List<Collegiate> collegiates){
             this.context = context;
-            this.collegiates = collegiates;
+            this.collegiate = collegiates;
         }
 
         @Override
         public int getCount() {
-            return collegiates.size();
+            return collegiate.size();
         }
 
         @Override
         public Object getItem(int i) {
-            return collegiates.get(i);
+            return collegiate.get(i);
         }
 
         @Override

@@ -4,10 +4,13 @@
 
     <item android:id="@+id/addnew"
         android:title="New"
-        app:showAsAction="never"></item>
+        android:icon="@drawable/addnew1"
+        app:showAsAction="always"></item>
 
     <item android:id="@+id/history"
         android:title="History"
-        app:showAsAction="never"></item>
+        android:icon="@drawable/history"
+        app:showAsAction="always"></item>
+
 
 </menu>

@@ -11,7 +11,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DictonoryAPIManager {
+public class DictonaryAPIManager {
 
     private Gson gson = new Gson();
 
@@ -19,11 +19,11 @@ public class DictonoryAPIManager {
         List<Collegiate> historyObjects = getCollegiatesFromPreferences(preferences);
         String historyData;
         SharedPreferences.Editor editor = preferences.edit();
-        Boolean added = addOnlyNewWordToHistory(historyObjects, collegiate);
+        Boolean isAdded = addOnlyNewWordToHistory(historyObjects, collegiate);
         historyData =  gson.toJson(historyObjects);
         editor.putString("historyWords", historyData);
         editor.apply();
-        return added;
+        return isAdded;
     }
 
     public List<Collegiate> getCollegiatesFromPreferences(SharedPreferences preferences) {
@@ -41,22 +41,22 @@ public class DictonoryAPIManager {
     }
 
     private Boolean addOnlyNewWordToHistory(List<Collegiate> historyObjects, Collegiate collegiate) {
-        Boolean added;
+        Boolean isAdded;
         Collegiate searchCollegiate = historyObjects.stream()
                 .filter(collegiate1 -> collegiate.getMeta().getId().equals(collegiate1.getMeta().getId()))
                 .findFirst()
                 .orElse(null);
         if(searchCollegiate != null){
             Log.v(" Word exist in history: ", searchCollegiate.toString());
-            added = false;
+            isAdded = false;
         }else{
             historyObjects.add(collegiate);
             Log.v(" Word added in history: ", collegiate.toString());
-            added = true;
+            isAdded = true;
         }
 
 
-        return added;
+        return isAdded;
     }
 
 }
